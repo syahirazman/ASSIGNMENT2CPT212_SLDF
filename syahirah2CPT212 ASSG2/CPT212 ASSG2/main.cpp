@@ -1,8 +1,4 @@
-#include <iostream>
-#include <list>
-#include <stack>
-#include <iterator>
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
 using namespace std;
 # define INF 0x3f3f3f3f
 
@@ -10,8 +6,8 @@ class Graph {
 	
    int V;
    list<pair<int, int>> *adj;
-   void DFS(int u, bool visited[]);		// A recursive function to print DFS starting from v
-   bool isCyclicUtil(int v, bool visited[], bool *rs);		// A recursive function to print DFS starting from v
+   void isSCUtil(int u, bool visited[]);		// A recursive function to print DFS starting from v
+   bool isCyclicUtil(int v, bool visited[], bool *recurStack);		// A recursive function to print DFS starting from v
    
    public:
 	// Constructor	
@@ -25,71 +21,71 @@ class Graph {
       delete [] adj;
    }
    
-   void addEdge(int u, int v, int wt);	// To add a new edge
+   void addEdge(int u, int v, int w);	// To add a new edge
    void printGraph();	// To print graph
    bool isStronglyConnected();	// To check whether graph is strongly connected
    bool isCyclic();		// To check whether graph contains cycle
-   Graph reverseArc();	// To create a reverse graph
+   Graph transpose();	// To create a reverse graph
    void shortestPath(int u, int v); // To output shortest path between source and destination
 };
 
 
 // Recursive function to print DFS starting from v used by isStronglyConnected()
-void Graph::DFS(int v, bool visited[]) {
+void Graph::isSCUtil(int v, bool visited[]) {
    visited[v] = true;
-   for (auto i = adj[v].begin(); i != adj[v].end(); ++i)
+   for(int i=0; i< sizeof(adj[v])/sizeof(int);i++)
    		if (!visited[i])
-		   DFS(i, visited);
+		   isSCUtil(i, visited);
 }
 
 // Recursive function to print DFS starting from v used by isCyclic()
-bool Graph::isCyclicUtil(int v, bool visited[], bool *recStack)
+bool Graph::isCyclicUtil(int v, bool visited[], bool *recurStack)
 {
     if(visited[v] == false)
     {
         visited[v] = true;
-        recStack[v] = true;
+        recurStack[v] = true;
         
         //list<pair<int,int>>::iterator i;
-        for(int i = 0; i < adj[v].size(); ++i)
+        for(int i=0; i< sizeof(adj[v])/sizeof(int);i++)
         {
-        	if ( !visited[i] && isCyclicUtil(i, visited, recStack) )
+        	if ( !visited[i] && isCyclicUtil(i, visited, recurStack) )
                 return true;
-            else if (recStack[i])
+            else if (recurStack[i])
                 return true; 
         }
     }
-    recStack[v] = false; // Remove vertex from recursion stack
+    recurStack[v] = false; // Remove vertex from recursion stack
     return false;
 }
 
 // Function to reverse graph used by isStronglyConnected()
-Graph Graph::reverseArc() {
+Graph Graph::transpose() {
    Graph g(V);
    int wt;
    for (int v = 0; v < V; v++) {
    		//list<pair<int,int>>::iterator i;
-      	for(auto i = adj[v].begin(); i != adj[v].end(); ++i)
+      	for(int i = 0; i < adj[v].size(); ++i)
         	g.adj[i].push_back(make_pair(v, wt));
    }
    return g;
 }
 
 // Function to add new edge into adjacency list used by main()
-void Graph::addEdge(int u, int v, int wt) {
-   adj[u].push_back(make_pair(v, wt));
+void Graph::addEdge(int u, int v, int w) {
+   adj[u].push_back(make_pair(v, w));
 }
 
 // Function to print the resulting adjacency list used by main()
 void Graph::printGraph() {
-	int v, wt;
+	int v, w;
 	for (int u = 0; u < V; u++) {
 		cout << "\t\t\t     " << u;
-		for (auto i = adj[u].begin(); i!=adj[u].end(); i++)
+		for (auto i = adj[u].begin(); i!=adj[u].end(); ++i)
         {
             v = i->first;
-            wt = i->second;
-            cout << " -> (" << v << ", " << wt << ")";
+            w = i->second;
+            cout << " -> (" << v << ", " << w << ")";
         }
         cout << endl;
 	}
@@ -103,18 +99,18 @@ bool Graph::isStronglyConnected() {
    for (int i = 0; i < V; i++)
    		visited[i] = false;
    	
-   DFS(0, visited);
+   isSCUtil(0, visited);
    
    for (int i = 0; i < V; i++)
       if (visited[i] == false)
          return false;
          
-   Graph gr = reverseArc();
+   Graph gr = transpose();
    
    for(int i = 0; i < V; i++)
       visited[i] = false;
 	
-   gr.DFS(0, visited);
+   gr.isSCUtil(0, visited);
    for (int i = 0; i < V; i++)
       if (visited[i] == false)
          return false;
@@ -128,15 +124,15 @@ bool Graph::isStronglyConnected() {
 bool Graph::isCyclic()
 {
     bool *visited = new bool[V];
-    bool *recStack = new bool[V];
+    bool *recurStack = new bool[V];
     for(int i = 0; i < V; i++)
     {
         visited[i] = false;
-        recStack[i] = false;
+        recurStack[i] = false;
     }
   
     for(int i = 0; i < V; i++)
-        if ( !visited[i] && isCyclicUtil(i, visited, recStack))
+        if ( !visited[i] && isCyclicUtil(i, visited, recurStack))
             return true;
   
     return false;
@@ -152,22 +148,22 @@ void Graph::shortestPath(int src, int dest) {
     dist[src] = 0;
     while (!setds.empty())
     {
-        pair<int, int> tmp = *(setds.begin());
+        pair<int, int> temp = *(setds.begin());
         setds.erase(setds.begin());
  
-        int u = tmp.second;
+        int u = temp.second;
         list< pair<int, int> >::iterator i;
         for (i = adj[u].begin(); i != adj[u].end(); ++i)
         {
-            int v = (*i).first;
-            int weight = (*i).second;
+            int v = i->first;
+            int w = i->second;
  
-            if (dist[v] > dist[u] + weight)
+            if (dist[v] > dist[u] + w)
             {
                 if (dist[v] != INF)
                     setds.erase(setds.find(make_pair(dist[v], v)));
                     
-                dist[v] = dist[u] + weight;
+                dist[v] = dist[u] + w;
                 setds.insert(make_pair(dist[v], v));
             }
         }
@@ -259,7 +255,7 @@ int main() {
    		cout << "\n\n\n";
    		
    		if (graph.isCyclic()) {
-   			cout << "\t\t     This graph is contains cycle.\n";
+   			cout << "\t\t     This graph contains cycle.\n";
    			cout << "\n\n";
    			graph.printGraph();
 		}
